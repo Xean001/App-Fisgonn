@@ -1,0 +1,22 @@
+.DS_Store
+
+# Gradle / Android build output
+.gradle/
+build/
+**/build/
+
+# Local machine configuration
+local.properties
+
+# Kotlin / Compose generated files
+**/.kotlin/
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+
+# IDE files
+.idea/
+
+# Separate nested repository
+changes/
