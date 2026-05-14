@@ -10,7 +10,7 @@ object DatabaseFactory {
     fun init(config: ApplicationConfig) {
         val host = config.propertyOrNull("db.host")?.getString() ?: "localhost"
         val port = config.propertyOrNull("db.port")?.getString()?.toIntOrNull() ?: 5432
-        val name = config.propertyOrNull("db.name")?.getString() ?: "Fisgon"
+        val name = config.propertyOrNull("db.name")?.getString() ?: "fisgon"
         val jdbcUrl = config.propertyOrNull("db.jdbcUrl")?.getString()
             ?: "jdbc:postgresql://$host:$port/$name"
         val user = config.propertyOrNull("db.user")?.getString() ?: "fisgon"

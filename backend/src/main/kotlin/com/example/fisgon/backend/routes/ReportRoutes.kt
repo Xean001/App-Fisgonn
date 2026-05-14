@@ -1,5 +1,6 @@
 package com.example.fisgon.backend.routes
 
+import com.example.fisgon.backend.db.AuthSessions
 import com.example.fisgon.backend.db.Reports
 import com.example.fisgon.shared.model.ReportCreateRequest
 import com.example.fisgon.shared.model.ReportResponse
@@ -14,6 +15,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 import java.time.LocalDateTime
@@ -25,8 +27,19 @@ fun Route.reportRoutes() {
         route("/reports") {
             post {
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString()
-                if (userId.isNullOrBlank()) {
+                val sessionUuid = principal?.payload?.getClaim("sessionUuid")?.asString()
+                val userId = sessionUuid?.let { uuid ->
+                    runCatching {
+                        transaction {
+                            AuthSessions.selectAll()
+                                .where { AuthSessions.id eq UUID.fromString(uuid) }
+                                .limit(1)
+                                .singleOrNull()
+                                ?.get(AuthSessions.userId)
+                        }
+                    }.getOrNull()
+                }
+                if (userId == null) {
                     call.respond(HttpStatusCode.Unauthorized)
                     return@post
                 }
@@ -39,7 +52,7 @@ fun Route.reportRoutes() {
                 transaction {
                     Reports.insert { row ->
                         row[id] = reportId
-                        row[Reports.userId] = UUID.fromString(userId)
+                        row[Reports.userId] = userId
                         row[description] = request.description
                         row[severity] = request.severity
                         row[latitude] = request.latitude
@@ -52,7 +65,7 @@ fun Route.reportRoutes() {
                     HttpStatusCode.Created,
                     ReportResponse(
                         id = reportId.toString(),
-                        userId = userId,
+                        userId = userId.toString(),
                         description = request.description,
                         latitude = request.latitude,
                         longitude = request.longitude,

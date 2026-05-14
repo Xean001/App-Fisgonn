@@ -1,6 +1,7 @@
 package com.example.fisgon.backend.routes
 
 import com.example.fisgon.backend.db.Users
+import com.example.fisgon.backend.db.AuthSessions
 import com.example.fisgon.backend.security.JwtConfig
 import com.example.fisgon.backend.security.PasswordHasher
 import com.example.fisgon.shared.model.AuthResponse
@@ -58,8 +59,19 @@ fun Route.authRoutes(jwtConfig: JwtConfig) {
                 }
             }
 
-            val token = jwtConfig.createToken(userId.toString(), now)
             val expiresAt = jwtConfig.expiresAt(now)
+            val sessionUuid = UUID.randomUUID()
+
+            transaction {
+                AuthSessions.insert { row ->
+                    row[id] = sessionUuid
+                    row[AuthSessions.userId] = userId
+                    row[AuthSessions.createdAt] = createdAt
+                    row[AuthSessions.expiresAt] = LocalDateTime.ofInstant(expiresAt, ZoneOffset.UTC)
+                }
+            }
+
+            val token = jwtConfig.createToken(sessionUuid.toString(), now)
             call.respond(
                 HttpStatusCode.Created,
                 AuthResponse(
@@ -100,8 +112,20 @@ fun Route.authRoutes(jwtConfig: JwtConfig) {
 
             val userId = row[Users.id].value
             val now = Instant.now()
-            val token = jwtConfig.createToken(userId.toString(), now)
             val expiresAt = jwtConfig.expiresAt(now)
+            val createdAt = LocalDateTime.ofInstant(now, ZoneOffset.UTC)
+            val sessionUuid = UUID.randomUUID()
+
+            transaction {
+                AuthSessions.insert { session ->
+                    session[id] = sessionUuid
+                    session[AuthSessions.userId] = userId
+                    session[AuthSessions.createdAt] = createdAt
+                    session[AuthSessions.expiresAt] = LocalDateTime.ofInstant(expiresAt, ZoneOffset.UTC)
+                }
+            }
+
+            val token = jwtConfig.createToken(sessionUuid.toString(), now)
 
             call.respond(
                 AuthResponse(

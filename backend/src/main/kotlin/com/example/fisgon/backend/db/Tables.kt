@@ -13,6 +13,12 @@ object Users : UUIDTable("users") {
     val createdAt = datetime("created_at")
 }
 
+object AuthSessions : UUIDTable("auth_sessions", "session_uuid") {
+    val userId = uuid("user_id").references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val createdAt = datetime("created_at")
+    val expiresAt = datetime("expires_at")
+}
+
 object Reports : UUIDTable("reports") {
     val userId = uuid("user_id").references(Users.id, onDelete = ReferenceOption.CASCADE)
     val description = text("description").nullable()

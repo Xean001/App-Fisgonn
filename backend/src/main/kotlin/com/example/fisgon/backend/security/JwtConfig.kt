@@ -18,12 +18,12 @@ class JwtConfig(
         .withAudience(audience)
         .build()
 
-    fun createToken(userId: String, issuedAt: Instant): String {
+    fun createToken(sessionUuid: String, issuedAt: Instant): String {
         val expiresAt = issuedAt.plusSeconds(ttlSeconds)
         return JWT.create()
             .withIssuer(issuer)
             .withAudience(audience)
-            .withClaim("userId", userId)
+            .withClaim("sessionUuid", sessionUuid)
             .withIssuedAt(issuedAt)
             .withExpiresAt(expiresAt)
             .sign(algorithm)

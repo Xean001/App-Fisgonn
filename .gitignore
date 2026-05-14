@@ -7,6 +7,9 @@ build/
 
 # Local machine configuration
 local.properties
+.env
+.env.*
+!.env.example
 
 # Kotlin / Compose generated files
 **/.kotlin/

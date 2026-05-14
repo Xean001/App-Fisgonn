@@ -14,6 +14,9 @@ import com.example.fisgon.presentation.home.HomeScreen
 import com.example.fisgon.presentation.home.HomeViewModel
 import com.example.fisgon.presentation.login.LoginScreen
 import com.example.fisgon.presentation.login.LoginViewModel
+import com.example.fisgon.presentation.permissions.NoopPermissionsController
+import com.example.fisgon.presentation.permissions.PermissionsController
+import com.example.fisgon.presentation.permissions.PermissionsScreen
 import com.example.fisgon.presentation.register.RegisterScreen
 import com.example.fisgon.presentation.register.RegisterViewModel
 
@@ -21,6 +24,7 @@ import com.example.fisgon.presentation.register.RegisterViewModel
 fun App(
     authRepository: AuthRepository = AuthRepositoryImpl(),
     productRepository: ProductRepository = ProductRepositoryImpl(),
+    permissionsController: PermissionsController = NoopPermissionsController,
     onOpenUrl: (String) -> Unit = {}
 ) {
     MaterialTheme(colorScheme = darkColorScheme()) {
@@ -35,7 +39,7 @@ fun App(
                 LoginScreen(
                     viewModel = loginVm,
                     onLoginSuccess = { user, _ ->
-                        screen = AppScreen.Home(user)
+                        screen = AppScreen.Permissions(user)
                     },
                     onNavigateToRegister = {
                         screen = AppScreen.Register
@@ -50,9 +54,19 @@ fun App(
                 RegisterScreen(
                     viewModel = registerVm,
                     onRegisterSuccess = { user, _ ->
-                        screen = AppScreen.Home(user)
+                        screen = AppScreen.Permissions(user)
                     },
                     onBack = { screen = AppScreen.Login }
+                )
+            }
+
+            is AppScreen.Permissions -> {
+                PermissionsScreen(
+                    user = current.user,
+                    controller = permissionsController,
+                    onContinue = {
+                        screen = AppScreen.Home(current.user)
+                    }
                 )
             }
 

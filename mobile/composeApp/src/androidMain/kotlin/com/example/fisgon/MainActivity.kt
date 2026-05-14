@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import com.example.fisgon.data.db.FisgonDatabaseHelper
 import com.example.fisgon.data.repository.AuthRepositoryImpl
 import com.example.fisgon.data.repository.AndroidProductRepositoryImpl
+import com.example.fisgon.presentation.permissions.rememberAndroidPermissionsController
 import org.maplibre.android.MapLibre
 
 class MainActivity : ComponentActivity() {
@@ -23,9 +24,11 @@ class MainActivity : ComponentActivity() {
         val productRepository = AndroidProductRepositoryImpl(dbHelper)
 
         setContent {
+            val permissionsController = rememberAndroidPermissionsController()
             App(
                 authRepository    = authRepository,
                 productRepository = productRepository,
+                permissionsController = permissionsController,
                 onOpenUrl         = { url ->
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 }

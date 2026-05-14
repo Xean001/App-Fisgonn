@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fisgon.domain.entity.Product
 import com.example.fisgon.presentation.map.MapLibreMap
+import kotlin.math.roundToInt
 
 private val BgColor    = Color(0xFF090E1C)
 private val Teal       = Color(0xFF00C9A0)
@@ -294,9 +295,16 @@ private fun ProductItem(product: Product, isSelected: Boolean, onClick: () -> Un
             Text(product.marca, color = TextMuted, fontSize = 11.sp)
         }
         Spacer(Modifier.width(8.dp))
-        Text("S/ ${"%.2f".format(product.precio)}", color = Color.White,
+        Text("S/ ${formatPrice(product.precio)}", color = Color.White,
             fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
+}
+
+private fun formatPrice(value: Double): String {
+    val cents = (value * 100).roundToInt()
+    val soles = cents / 100
+    val decimals = (cents % 100).toString().padStart(2, '0')
+    return "$soles.$decimals"
 }
 
 @Composable

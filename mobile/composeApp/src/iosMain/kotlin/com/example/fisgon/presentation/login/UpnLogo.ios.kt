@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import fisgon.composeapp.generated.resources.Res
-import fisgon.composeapp.generated.resources.logo_upn
+import fisgon.mobile.composeapp.generated.resources.Res
+import fisgon.mobile.composeapp.generated.resources.logo_upn
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
