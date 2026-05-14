@@ -14,7 +14,17 @@ Proyecto **Kotlin Multiplatform** (KMP) con **Compose Multiplatform** para Andro
 ## Estructura del proyecto
 
 ```
-composeApp/src/
+mobile/
+├── composeApp/src/
+├── iosApp/
+backend/
+shared/
+```
+
+## Estructura del modulo mobile
+
+```
+mobile/composeApp/src/
 ├── commonMain/kotlin/com/example/fisgon/
 │   ├── domain/                         ← Capa de dominio (puro Kotlin, sin Android)
 │   │   ├── entity/LoginCredentials.kt  ← Datos que viajan entre capas
@@ -54,9 +64,9 @@ AuthRepositoryImpl (capa de datos)
 
 ```bash
 # Android
-./gradlew :composeApp:assembleDebug
+./gradlew :mobile:composeApp:assembleDebug
 
-# iOS — abrir iosApp/iosApp.xcodeproj en Xcode
+# iOS — abrir mobile/iosApp/iosApp.xcodeproj en Xcode
 ```
 
 ## Pantalla de Login
