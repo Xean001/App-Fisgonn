@@ -13,5 +13,6 @@ data class RegisterUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val registeredUser: User? = null,
-    val generatedToken: String? = null
+    val generatedToken: String? = null,
+    val jwtToken: String? = null
 )

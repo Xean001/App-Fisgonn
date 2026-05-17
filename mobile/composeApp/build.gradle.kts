@@ -32,6 +32,8 @@ kotlin {
             implementation(libs.androidsvg)
             implementation(libs.maplibre.android.sdk)
             implementation(libs.ktor.client.cio)
+            implementation(libs.play.services.location)
+            implementation(libs.androidx.work.runtime)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -45,6 +47,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.websockets)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(projects.shared)
         }

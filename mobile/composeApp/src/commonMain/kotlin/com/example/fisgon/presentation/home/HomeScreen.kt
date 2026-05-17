@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -15,12 +16,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fisgon.domain.entity.Product
 import com.example.fisgon.presentation.map.MapLibreMap
+import com.example.fisgon.presentation.panic.PanicViewModel
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
+
+private fun Double.fmt4(): String {
+    val shifted = (this * 10000.0).roundToLong()
+    val intPart = shifted / 10000
+    val decPart = abs(shifted % 10000).toString().padStart(4, '0')
+    return "$intPart.$decPart"
+}
 
 private val BgColor    = Color(0xFF090E1C)
 private val Teal       = Color(0xFF00C9A0)
@@ -33,18 +45,115 @@ private val TextMuted  = Color(0xFF5A6A85)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    panicViewModel: PanicViewModel,
     onOpenUrl: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val panicState by panicViewModel.uiState.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BgColor)
-            .verticalScroll(rememberScrollState())
-            .safeContentPadding()
-            .padding(horizontal = 20.dp)
-    ) {
+    // Confirmación al sender cuando presiona SOS
+    if (panicState.panicSentConfirmation) {
+        AlertDialog(
+            onDismissRequest = { panicViewModel.dismissPanicConfirmation() },
+            containerColor = Color(0xFF0A2000),
+            title = {
+                Text(
+                    "ALERTA SOS ENVIADA",
+                    color = Color(0xFF4CAF50),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    letterSpacing = 1.sp
+                )
+            },
+            text = {
+                Text(
+                    "Tu alerta de pánico fue enviada a los usuarios cercanos.",
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { panicViewModel.dismissPanicConfirmation() }) {
+                    Text("OK", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    // Error: sin ubicación GPS
+    if (panicState.noLocationError) {
+        AlertDialog(
+            onDismissRequest = { panicViewModel.dismissNoLocationError() },
+            containerColor = Color(0xFF1A1000),
+            title = {
+                Text(
+                    "SIN UBICACIÓN",
+                    color = Color(0xFFFF9800),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                )
+            },
+            text = {
+                Text(
+                    "Esperando señal GPS. Activa la ubicación e intenta de nuevo.",
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { panicViewModel.dismissNoLocationError() }) {
+                    Text("OK", color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    // Show incoming panic alert dialog
+    panicState.incomingAlert?.let { alert ->
+        AlertDialog(
+            onDismissRequest = { panicViewModel.dismissAlert() },
+            containerColor = Color(0xFF1A0000),
+            title = {
+                Text(
+                    "ALERTA SOS CERCANA",
+                    color = Color(0xFFFF3333),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    letterSpacing = 2.sp
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        "Se ha recibido una alerta de pánico en tu zona.",
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Ubicacion: ${alert.latitude.fmt4()}, ${alert.longitude.fmt4()}",
+                        color = Color(0xFFAAAAAA),
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { panicViewModel.dismissAlert() }) {
+                    Text("ENTENDIDO", color = Color(0xFFFF3333), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BgColor)
+                .verticalScroll(rememberScrollState())
+                .safeContentPadding()
+                .padding(horizontal = 20.dp)
+        ) {
         Spacer(Modifier.height(20.dp))
 
         // ── Header ──────────────────────────────────────────────
@@ -54,6 +163,15 @@ fun HomeScreen(
                     fontWeight = FontWeight.ExtraBold, letterSpacing = 3.sp)
                 Text("SEGURIDAD ACTIVA", color = TextMuted, fontSize = 9.sp, letterSpacing = 2.sp)
             }
+            // WS connection status dot
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(
+                        if (panicState.isConnected) Color(0xFF4CAF50) else Color(0xFFFF5252),
+                        CircleShape
+                    )
+            )
         }
 
         Spacer(Modifier.height(16.dp))
@@ -80,8 +198,17 @@ fun HomeScreen(
         Spacer(Modifier.height(24.dp))
 
         // ── Mapa ───────────────────────────────────────────────
-        Text("MAPA", color = Teal, fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("MAPA", color = Teal, fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp,
+                modifier = Modifier.weight(1f))
+            panicState.currentLocation?.let { loc ->
+                Text(
+                    "${loc.latitude.fmt4()}, ${loc.longitude.fmt4()}",
+                    color = TextMuted, fontSize = 9.sp
+                )
+            }
+        }
         Spacer(Modifier.height(12.dp))
         Box(
             modifier = Modifier
@@ -221,8 +348,35 @@ fun HomeScreen(
             )
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(100.dp)) // space for FAB
+    } // end Column
+
+    // ── Botón de Pánico (FAB) ────────────────────────────────
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .safeContentPadding()
+            .padding(bottom = 24.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Button(
+            onClick = { panicViewModel.onPanicButtonPressed() },
+            modifier = Modifier.size(80.dp),
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (panicState.isSendingPanic) Color(0xFF8B0000) else Color(0xFFCC0000),
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("SOS", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, lineHeight = 18.sp)
+                Text("PÁNICO", fontSize = 7.sp, letterSpacing = 1.sp, lineHeight = 9.sp,
+                    textAlign = TextAlign.Center)
+            }
+        }
     }
+    } // end outer Box
 }
 
 // ── Componentes privados ─────────────────────────────────────────────────────

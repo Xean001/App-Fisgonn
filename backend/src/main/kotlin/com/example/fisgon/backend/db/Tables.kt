@@ -27,3 +27,12 @@ object Reports : UUIDTable("reports") {
     val longitude = double("longitude")
     val createdAt = datetime("created_at")
 }
+
+object Geofences : UUIDTable("geofences") {
+    val name = varchar("name", 255)
+    val latitude = double("latitude")
+    val longitude = double("longitude")
+    val radiusMeters = double("radius_meters")
+    val severity = integer("severity").default(1)
+    val createdAt = datetime("created_at")
+}

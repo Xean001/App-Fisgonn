@@ -55,3 +55,31 @@ data class ApiError(
     val code: String,
     val message: String
 )
+
+@Serializable
+data class WsMessage(
+    val type: String,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val userId: String? = null,
+    val timestamp: String? = null
+)
+
+@Serializable
+data class GeofenceDto(
+    val id: String,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val radiusMeters: Double,
+    val severity: Int = 1
+)
+
+@Serializable
+data class GeofenceCreateRequest(
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val radiusMeters: Double,
+    val severity: Int = 1
+)

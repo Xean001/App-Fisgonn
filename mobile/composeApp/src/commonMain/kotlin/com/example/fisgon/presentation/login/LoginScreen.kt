@@ -50,9 +50,9 @@ fun LoginScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(state.loggedUser, state.generatedToken) {
+    LaunchedEffect(state.loggedUser, state.jwtToken) {
         val user = state.loggedUser ?: return@LaunchedEffect
-        val token = state.generatedToken ?: return@LaunchedEffect
+        val token = state.jwtToken ?: return@LaunchedEffect
         onLoginSuccess(user, token)
     }
 

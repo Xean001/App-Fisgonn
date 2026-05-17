@@ -66,7 +66,8 @@ class RegisterViewModel(
                         it.copy(
                             isLoading = false,
                             registeredUser = session.user,
-                            generatedToken = Random.nextInt(100000, 999999).toString()
+                            generatedToken = Random.nextInt(100000, 999999).toString(),
+                            jwtToken = session.token
                         )
                     }
                 }

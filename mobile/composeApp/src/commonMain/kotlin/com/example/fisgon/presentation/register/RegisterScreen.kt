@@ -47,9 +47,9 @@ fun RegisterScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(state.registeredUser, state.generatedToken) {
+    LaunchedEffect(state.registeredUser, state.jwtToken) {
         val user = state.registeredUser ?: return@LaunchedEffect
-        val token = state.generatedToken ?: return@LaunchedEffect
+        val token = state.jwtToken ?: return@LaunchedEffect
         onRegisterSuccess(user, token)
     }
 
