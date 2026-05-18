@@ -21,7 +21,8 @@ data class UserResponse(
     val id: String,
     val email: String,
     val nombre: String? = null,
-    val apellido: String? = null
+    val apellido: String? = null,
+    val anonymousUsername: String? = null
 )
 
 @Serializable

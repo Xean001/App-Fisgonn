@@ -42,8 +42,12 @@ class RegisterViewModel(
                 _uiState.update { it.copy(errorMessage = "Ingresa un correo válido (ej: usuario@dominio.com)") }
                 return
             }
-            state.password.length < 6 -> {
-                _uiState.update { it.copy(errorMessage = "La contraseña debe tener al menos 6 caracteres") }
+            state.password.length < 8 -> {
+                _uiState.update { it.copy(errorMessage = "La contraseña debe tener al menos 8 caracteres") }
+                return
+            }
+            !state.password.any { it.isLetter() } || !state.password.any { it.isDigit() } -> {
+                _uiState.update { it.copy(errorMessage = "La contraseña debe incluir al menos una letra y un número") }
                 return
             }
             state.password != state.confirmPassword -> {

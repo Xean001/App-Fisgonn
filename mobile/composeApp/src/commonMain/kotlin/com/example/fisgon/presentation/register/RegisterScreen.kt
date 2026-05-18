@@ -149,8 +149,8 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // USUARIO
-            FieldLabel("USUARIO")
+            // CORREO (el @username anónimo lo genera el sistema; no se escribe)
+            FieldLabel("CORREO")
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = state.email,
@@ -176,7 +176,7 @@ fun RegisterScreen(
                     value = state.password,
                     onValueChange = viewModel::onPasswordChange,
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Mínimo 6 caracteres", color = TextMuted, fontSize = 13.sp) },
+                    placeholder = { Text("Mín. 8, una letra y un número", color = TextMuted, fontSize = 13.sp) },
                     visualTransformation = if (state.isPasswordVisible)
                         VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),

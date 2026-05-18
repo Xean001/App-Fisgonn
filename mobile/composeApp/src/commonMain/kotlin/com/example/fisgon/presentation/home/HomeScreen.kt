@@ -188,10 +188,13 @@ fun HomeScreen(
         ) {
             Text("¡Bienvenido!", color = Teal, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             Text(
-                "${viewModel.currentUser.nombre} ${viewModel.currentUser.apellido}",
+                viewModel.currentUser.anonymousUsername
+                    .takeIf { it.isNotBlank() }
+                    ?.let { "@$it" }
+                    ?: "${viewModel.currentUser.nombre} ${viewModel.currentUser.apellido}",
                 color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold
             )
-            Text(viewModel.currentUser.email, color = TextMuted, fontSize = 12.sp)
+            Text("Tu identidad pública es anónima", color = TextMuted, fontSize = 12.sp)
             Text("Acceso exitoso al sistema", color = Color(0xFF4CAF50), fontSize = 12.sp)
         }
 

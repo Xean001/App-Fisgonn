@@ -100,8 +100,8 @@ fun LoginScreen(
 
             Spacer(Modifier.height(48.dp))
 
-            // Campo usuario
-            FieldLabel("USUARIO")
+            // Campo correo (el login es con email; el @username es anónimo y lo genera el sistema)
+            FieldLabel("CORREO")
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = state.email,

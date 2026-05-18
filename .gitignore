@@ -23,3 +23,7 @@ xcuserdata/
 
 # Separate nested repository
 changes/
+
+# Backend env secrets
+backend/.env
+backend/.env.*

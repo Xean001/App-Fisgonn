@@ -63,7 +63,8 @@ class AuthRepositoryImpl(
                 id = user.id,
                 nombre = nombre,
                 apellido = apellido,
-                email = user.email
+                email = user.email,
+                anonymousUsername = user.anonymousUsername ?: ""
             ),
             token = token
         )

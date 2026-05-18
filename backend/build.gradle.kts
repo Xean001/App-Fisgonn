@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.flyway.postgresql)
 
     implementation(libs.logback.classic)
+    implementation(libs.dotenv.kotlin)
     implementation(projects.shared)
 }
 
