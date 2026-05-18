@@ -149,7 +149,7 @@ fun TokenScreen(
                     contentColor = Color.White
                 )
             ) {
-                Text("Verificar Token", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Verificar código", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
 
             Spacer(Modifier.height(24.dp))

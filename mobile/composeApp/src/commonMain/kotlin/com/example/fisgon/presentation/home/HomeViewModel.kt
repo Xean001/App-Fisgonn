@@ -56,7 +56,7 @@ class HomeViewModel(
             return
         }
         val s = _uiState.value
-        val title = s.formTitle.ifBlank { s.selectedCategory?.name ?: "Incidente" }
+        val title = s.formTitle.ifBlank { s.selectedCategory?.localizedName() ?: "Incidente" }
 
         // Añade marcador visual local
         _uiState.update {

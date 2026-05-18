@@ -33,7 +33,12 @@ fun main(args: Array<String>) {
     // Carga backend/.env y lo expone como system properties para que la
     // sustitución HOCON de application.conf (${?DB_HOST}, etc.) lo resuelva.
     // Funciona corriendo desde la raíz o desde el módulo backend/.
-    val envDir = if (java.io.File("backend/.env").exists()) "backend" else "."
+    val envDir = when {
+        java.io.File("backend/.env").exists() -> "backend"
+        java.io.File(".env").exists() -> "."
+        java.io.File("../.env").exists() -> ".."
+        else -> "."
+    }
     val env = dotenv {
         directory = envDir
         ignoreIfMissing = true

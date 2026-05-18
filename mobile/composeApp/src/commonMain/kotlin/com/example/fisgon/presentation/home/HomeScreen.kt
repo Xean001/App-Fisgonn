@@ -16,20 +16,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fisgon.presentation.map.MapLibreMap
 import com.example.fisgon.presentation.panic.PanicViewModel
-import kotlin.math.abs
-import kotlin.math.roundToLong
-
-private fun Double.fmt4(): String {
-    val s = (this * 10000.0).roundToLong()
-    return "${s / 10000}.${abs(s % 10000).toString().padStart(4, '0')}"
-}
-
 private val BgColor     = Color(0xFF090E1C)
 private val Teal        = Color(0xFF00C9A0)
 private val BorderColor = Color(0xFF1E2D47)
 private val InputBg     = Color(0xFF111827)
 private val CardBg      = Color(0xFF0F1929)
 private val TextMuted   = Color(0xFF5A6A85)
+private val TextSoft    = Color(0xFFA8B3C7)
 private val RedAlert    = Color(0xFFFF4444)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +72,7 @@ fun HomeScreen(
                 Column {
                     Text("Se ha recibido una alerta de pánico en tu zona.", color = Color.White, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("Ubicación: ${alert.latitude.fmt4()}, ${alert.longitude.fmt4()}",
+                    Text("Revisa el mapa para ubicar la alerta cercana.",
                         color = Color(0xFFAAAAAA), fontSize = 12.sp)
                 }
             },
@@ -126,34 +119,24 @@ fun HomeScreen(
                         fontWeight = FontWeight.ExtraBold, letterSpacing = 3.sp)
                     Text("SEGURIDAD ACTIVA", color = TextMuted, fontSize = 8.sp, letterSpacing = 2.sp)
                 }
-                Text(
-                    viewModel.currentUser.anonymousUsername
-                        .takeIf { it.isNotBlank() }?.let { "@$it" }
-                        ?: viewModel.currentUser.nombre,
-                    color = TextMuted, fontSize = 11.sp
-                )
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    Modifier.size(8.dp).background(
-                        if (panicState.isConnected) Color(0xFF4CAF50) else Color(0xFFFF5252),
-                        CircleShape
-                    )
-                )
+                ConnectionStatus(isConnected = panicState.isConnected)
             }
 
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().height(1.dp).background(BorderColor))
             Spacer(Modifier.height(10.dp))
 
-            // ── Etiqueta mapa + coords ───────────────────────────
+            // ── Etiqueta mapa + estado ───────────────────────────
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("MI UBICACIÓN", color = Teal, fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp,
                     modifier = Modifier.weight(1f))
-                panicState.currentLocation?.let { loc ->
-                    Text("${loc.latitude.fmt4()}, ${loc.longitude.fmt4()}",
-                        color = TextMuted, fontSize = 9.sp)
-                }
+                Text(
+                    if (panicState.currentLocation != null) "GPS activo" else "Buscando señal",
+                    color = if (panicState.currentLocation != null) TextSoft else Color(0xFFFFB74D),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
             Spacer(Modifier.height(6.dp))
 
@@ -201,7 +184,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = state.selectedCategory?.name ?: "",
+                        value = state.selectedCategory?.localizedName() ?: "",
                         onValueChange = {},
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
@@ -221,7 +204,7 @@ fun HomeScreen(
                     ) {
                         state.categories.forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(cat.name, color = Color.White, fontSize = 13.sp) },
+                                text = { Text(cat.localizedName(), color = Color.White, fontSize = 13.sp) },
                                 onClick = { viewModel.onCategorySelected(cat) },
                                 leadingIcon = {
                                     Box(
@@ -296,12 +279,12 @@ fun HomeScreen(
                     ),
                     border = androidx.compose.foundation.BorderStroke(1.dp, RedAlert.copy(alpha = 0.6f))
                 ) {
-                    Text("Marcar mi ubicación en el mapa",
+                    Text("Reportar incidente aquí",
                         fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
             }
 
-            Spacer(Modifier.height(90.dp))
+            Spacer(Modifier.height(104.dp))
         }
 
         // ── Botón SOS ────────────────────────────────────────────
@@ -326,6 +309,31 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ConnectionStatus(isConnected: Boolean) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(CardBg, RoundedCornerShape(50))
+            .border(1.dp, BorderColor, RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        Box(
+            Modifier.size(7.dp).background(
+                if (isConnected) Color(0xFF4CAF50) else Color(0xFFFF5252),
+                CircleShape
+            )
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            if (isConnected) "Conectado" else "Sin conexión",
+            color = TextSoft,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
