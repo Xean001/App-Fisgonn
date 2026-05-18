@@ -33,8 +33,18 @@ data class AuthResponse(
 )
 
 @Serializable
+data class CategoryResponse(
+    val id: String,
+    val name: String,
+    val icon: String,
+    val color: String
+)
+
+@Serializable
 data class ReportCreateRequest(
+    val title: String? = null,
     val description: String? = null,
+    val categoryId: String? = null,
     val latitude: Double,
     val longitude: Double,
     val severity: Int = 1
@@ -44,7 +54,9 @@ data class ReportCreateRequest(
 data class ReportResponse(
     val id: String,
     val userId: String,
+    val title: String?,
     val description: String?,
+    val categoryId: String?,
     val latitude: Double,
     val longitude: Double,
     val severity: Int,

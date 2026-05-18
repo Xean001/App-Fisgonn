@@ -6,11 +6,9 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fisgon.data.repository.AuthRepositoryImpl
 import com.example.fisgon.data.repository.NoopPanicRepository
-import com.example.fisgon.data.repository.ProductRepositoryImpl
 import com.example.fisgon.domain.repository.AuthRepository
 import com.example.fisgon.domain.repository.LocationRepository
 import com.example.fisgon.domain.repository.PanicRepository
-import com.example.fisgon.domain.repository.ProductRepository
 import com.example.fisgon.domain.usecase.LoginUseCase
 import com.example.fisgon.navigation.AppScreen
 import com.example.fisgon.presentation.home.HomeScreen
@@ -36,7 +34,6 @@ private object NoopLocationRepository : LocationRepository {
 @Composable
 fun App(
     authRepository: AuthRepository = AuthRepositoryImpl(),
-    productRepository: ProductRepository = ProductRepositoryImpl(),
     permissionsController: PermissionsController = NoopPermissionsController,
     locationRepository: LocationRepository = NoopLocationRepository,
     panicRepository: PanicRepository = NoopPanicRepository(),
@@ -90,7 +87,7 @@ fun App(
                     )
                 }
                 val homeVm: HomeViewModel = viewModel(key = "home") {
-                    HomeViewModel(productRepository, current.user)
+                    HomeViewModel(current.user, current.token)
                 }
                 HomeScreen(
                     viewModel = homeVm,

@@ -10,9 +10,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.example.fisgon.data.db.FisgonDatabaseHelper
 import com.example.fisgon.data.location.AndroidLocationProvider
-import com.example.fisgon.data.repository.AndroidProductRepositoryImpl
 import com.example.fisgon.data.repository.AuthRepositoryImpl
 import com.example.fisgon.data.repository.PanicRepositoryImpl
 import com.example.fisgon.presentation.permissions.rememberAndroidPermissionsController
@@ -33,15 +31,12 @@ class MainActivity : ComponentActivity() {
         MapLibre.getInstance(applicationContext)
         GeofenceNotificationHelper.createChannel(this)
 
-        val dbHelper = FisgonDatabaseHelper(this)
         val authRepository = AuthRepositoryImpl()
-        val productRepository = AndroidProductRepositoryImpl(dbHelper)
 
         setContent {
             val permissionsController = rememberAndroidPermissionsController()
             App(
                 authRepository = authRepository,
-                productRepository = productRepository,
                 permissionsController = permissionsController,
                 locationRepository = locationProvider,
                 panicRepository = panicRepository,

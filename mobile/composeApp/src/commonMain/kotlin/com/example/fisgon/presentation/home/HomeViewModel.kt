@@ -2,9 +2,19 @@ package com.example.fisgon.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fisgon.domain.entity.Product
+import com.example.fisgon.data.remote.ApiConfig
+import com.example.fisgon.data.remote.createHttpClient
 import com.example.fisgon.domain.entity.User
-import com.example.fisgon.domain.repository.ProductRepository
+import com.example.fisgon.presentation.map.IncidentMarker
+import com.example.fisgon.shared.model.CategoryResponse
+import com.example.fisgon.shared.model.ReportCreateRequest
+import io.ktor.client.call.body
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,93 +22,79 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val productRepository: ProductRepository,
-    val currentUser: User
+    val currentUser: User,
+    private val token: String
 ) : ViewModel() {
 
+    private val client = createHttpClient()
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    init { loadProducts() }
+    init { loadCategories() }
 
-    private fun loadProducts() {
+    private fun loadCategories() {
         viewModelScope.launch {
-            _uiState.update { it.copy(products = productRepository.getAll()) }
+            runCatching {
+                client.get("${ApiConfig.BASE_URL}/categories").body<List<CategoryResponse>>()
+            }.onSuccess { cats ->
+                _uiState.update { it.copy(categories = cats) }
+            }
         }
     }
 
-    fun onCodigoChange(v: String) = _uiState.update { it.copy(formCodigo = v) }
-    fun onDescripcionChange(v: String) = _uiState.update { it.copy(formDescripcion = v) }
-    fun onPrecioChange(v: String) = _uiState.update { it.copy(formPrecio = v) }
-    fun onMarcaChange(v: String) = _uiState.update { it.copy(formMarca = v) }
-    fun onSearchQueryChange(v: String) = _uiState.update { it.copy(searchQuery = v) }
+    fun onTitleChange(v: String)       = _uiState.update { it.copy(formTitle = v) }
+    fun onDescriptionChange(v: String) = _uiState.update { it.copy(formDescription = v) }
+    fun onCategoryMenuToggle()         = _uiState.update { it.copy(categoryMenuExpanded = !it.categoryMenuExpanded) }
+    fun onCategoryMenuDismiss()        = _uiState.update { it.copy(categoryMenuExpanded = false) }
 
-    fun onProductSelected(product: Product) = _uiState.update {
-        it.copy(
-            selectedProduct  = product,
-            formCodigo       = product.codigo,
-            formDescripcion  = product.descripcion,
-            formPrecio       = product.precio.toString(),
-            formMarca        = product.marca
-        )
-    }
+    fun onCategorySelected(cat: CategoryResponse) =
+        _uiState.update { it.copy(selectedCategory = cat, categoryMenuExpanded = false) }
 
-    fun clearMessage() = _uiState.update { it.copy(message = null) }
-
-    fun onRegistrar() {
+    fun onMarkLocation(latitude: Double?, longitude: Double?) {
+        if (latitude == null || longitude == null) {
+            _uiState.update { it.copy(noGpsError = true) }
+            return
+        }
         val s = _uiState.value
-        val precio = s.formPrecio.toDoubleOrNull()
-        if (s.formCodigo.isBlank() || s.formDescripcion.isBlank() || precio == null || s.formMarca.isBlank()) {
-            _uiState.update { it.copy(message = "Completa todos los campos correctamente", messageIsError = true) }
-            return
+        val title = s.formTitle.ifBlank { s.selectedCategory?.name ?: "Incidente" }
+
+        // Añade marcador visual local
+        _uiState.update {
+            it.copy(markers = it.markers + IncidentMarker(latitude, longitude, title))
         }
+
+        // Envía al backend
         viewModelScope.launch {
-            productRepository.create(Product(0, s.formCodigo, s.formDescripcion, precio, s.formMarca))
-                .onSuccess { clearForm(); loadProducts(); _uiState.update { it.copy(message = "Producto registrado correctamente", messageIsError = false) } }
-                .onFailure { e -> _uiState.update { it.copy(message = e.message, messageIsError = true) } }
+            runCatching {
+                client.post("${ApiConfig.BASE_URL}/reports") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        ReportCreateRequest(
+                            title       = s.formTitle.ifBlank { null },
+                            description = s.formDescription.ifBlank { null },
+                            categoryId  = s.selectedCategory?.id,
+                            latitude    = latitude,
+                            longitude   = longitude
+                        )
+                    )
+                }
+            }.onSuccess {
+                _uiState.update {
+                    it.copy(
+                        formTitle = "", formDescription = "",
+                        selectedCategory = null,
+                        markerAdded = true, noGpsError = false, reportError = null
+                    )
+                }
+            }.onFailure { e ->
+                _uiState.update {
+                    it.copy(markerAdded = true, reportError = e.message)
+                }
+            }
         }
     }
 
-    fun onBuscar() {
-        val query = _uiState.value.searchQuery
-        viewModelScope.launch {
-            val results = if (query.isBlank()) productRepository.getAll()
-                          else productRepository.search(query)
-            _uiState.update { it.copy(products = results) }
-        }
-    }
-
-    fun onModificar() {
-        val s = _uiState.value
-        val selected = s.selectedProduct ?: run {
-            _uiState.update { it.copy(message = "Selecciona un producto de la lista primero", messageIsError = true) }
-            return
-        }
-        val precio = s.formPrecio.toDoubleOrNull()
-        if (s.formCodigo.isBlank() || precio == null) {
-            _uiState.update { it.copy(message = "Completa todos los campos", messageIsError = true) }
-            return
-        }
-        viewModelScope.launch {
-            productRepository.update(Product(selected.id, s.formCodigo, s.formDescripcion, precio, s.formMarca))
-                .onSuccess { clearForm(); loadProducts(); _uiState.update { it.copy(message = "Producto modificado correctamente", messageIsError = false) } }
-                .onFailure { e -> _uiState.update { it.copy(message = e.message, messageIsError = true) } }
-        }
-    }
-
-    fun onEliminar() {
-        val selected = _uiState.value.selectedProduct ?: run {
-            _uiState.update { it.copy(message = "Selecciona un producto de la lista primero", messageIsError = true) }
-            return
-        }
-        viewModelScope.launch {
-            productRepository.delete(selected.id)
-                .onSuccess { clearForm(); loadProducts(); _uiState.update { it.copy(message = "Producto eliminado correctamente", messageIsError = false) } }
-                .onFailure { e -> _uiState.update { it.copy(message = e.message, messageIsError = true) } }
-        }
-    }
-
-    private fun clearForm() = _uiState.update {
-        it.copy(formCodigo = "", formDescripcion = "", formPrecio = "", formMarca = "", selectedProduct = null)
-    }
+    fun dismissMarkerAdded() = _uiState.update { it.copy(markerAdded = false, reportError = null) }
+    fun dismissNoGps()       = _uiState.update { it.copy(noGpsError = false) }
 }
