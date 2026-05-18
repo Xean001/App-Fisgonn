@@ -2,6 +2,7 @@ package com.example.fisgon.data.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -12,6 +13,11 @@ import kotlinx.serialization.json.Json
 actual fun createHttpClient(): HttpClient = HttpClient(Darwin) {
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
+    }
+    install(HttpTimeout) {
+        connectTimeoutMillis = 10_000
+        requestTimeoutMillis = 20_000
+        socketTimeoutMillis = 20_000
     }
     install(Logging) {
         level = LogLevel.INFO

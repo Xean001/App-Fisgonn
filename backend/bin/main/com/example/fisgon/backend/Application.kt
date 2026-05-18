@@ -13,6 +13,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -25,8 +26,6 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
@@ -67,20 +66,19 @@ fun Application.module() {
             verifier(jwtConfig.verifier)
             validate { credentials ->
                 val sessionUuid = credentials.payload.getClaim("sessionUuid").asString()
-                val isActive = sessionUuid?.let { uuid ->
+                // Solo verificamos que la sesión exista en la BD.
+                // La expiración del JWT ya la valida el verifier (claim exp).
+                val exists = sessionUuid?.let { uuid ->
                     runCatching {
-                        val now = LocalDateTime.now(ZoneOffset.UTC)
                         transaction {
                             AuthSessions.selectAll()
                                 .where { AuthSessions.id eq UUID.fromString(uuid) }
                                 .limit(1)
-                                .singleOrNull()
-                                ?.get(AuthSessions.expiresAt)
-                                ?.isAfter(now) == true
+                                .count() > 0
                         }
                     }.getOrDefault(false)
                 } == true
-                if (isActive) credentials else null
+                if (exists) JWTPrincipal(credentials.payload) else null
             }
         }
     }

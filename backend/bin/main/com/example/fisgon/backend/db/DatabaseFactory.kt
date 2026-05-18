@@ -23,9 +23,23 @@ object DatabaseFactory {
             this.username = user
             this.password = password
             this.driverClassName = driver
+            // Máximo de conexiones simultáneas; solo se abren bajo carga real.
             this.maximumPoolSize = maximumPoolSize
+            // Conexiones mínimas en reposo: 2 bastan para responder rápido sin saturar la BD.
+            // HikariCP escala hasta maximumPoolSize cuando hay más requests concurrentes.
+            this.minimumIdle = 2
             this.isAutoCommit = false
             this.transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+            // Cierra conexiones idle que sobren tras 3 minutos de inactividad
+            // (solo aplica cuando el pool tiene más de minimumIdle conexiones abiertas).
+            this.idleTimeout = 180_000
+            // Recicla cada conexión a los 8 minutos para evitar conexiones obsoletas.
+            this.maxLifetime = 480_000
+            // Ping cada 60 s para mantener vivas las conexiones mínimas.
+            // Evita que el servidor PostgreSQL cierre conexiones idle (~2 min en Coolify).
+            this.keepaliveTime = 60_000
+            // Si no hay conexión disponible en 10 s, lanza excepción en vez de colgar.
+            this.connectionTimeout = 10_000
         }
 
         val dataSource = HikariDataSource(hikariConfig)

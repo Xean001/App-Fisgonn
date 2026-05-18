@@ -48,14 +48,18 @@ fun Route.authRoutes(jwtConfig: JwtConfig) {
             val hash = PasswordHasher.hash(request.password, salt)
             val now = Instant.now()
             val createdAt = LocalDateTime.ofInstant(now, ZoneOffset.UTC)
+            val expiresAt = jwtConfig.expiresAt(now)
+            val sessionUuid = UUID.randomUUID()
 
             // Genera el username anónimo en el backend (única fuente de la
             // lógica). La BD garantiza unicidad con el índice UNIQUE; si choca,
-            // se regenera y reintenta.
+            // se regenera y reintenta. User + session se insertan en una sola
+            // transacción para evitar estado inconsistente.
             var anonymousUsername = ""
             var inserted = false
+            var emailConflict = false
             var attempt = 0
-            while (!inserted && attempt < 6) {
+            while (!inserted && !emailConflict && attempt < 6) {
                 attempt++
                 val candidate = AnonymousUsername.next()
                 try {
@@ -70,31 +74,31 @@ fun Route.authRoutes(jwtConfig: JwtConfig) {
                             row[Users.anonymousUsername] = candidate
                             row[Users.createdAt] = createdAt
                         }
+                        AuthSessions.insert { row ->
+                            row[id] = sessionUuid
+                            row[AuthSessions.userId] = userId
+                            row[AuthSessions.createdAt] = createdAt
+                            row[AuthSessions.expiresAt] = LocalDateTime.ofInstant(expiresAt, ZoneOffset.UTC)
+                        }
                     }
                     anonymousUsername = candidate
                     inserted = true
                 } catch (e: ExposedSQLException) {
-                    if (e.message?.contains("users_anon_username_uq") == true) {
-                        continue // colisión de username anónimo: reintentar
+                    val msg = e.message ?: ""
+                    when {
+                        "users_anon_username_uq" in msg -> continue // colisión de username anónimo: reintentar
+                        "users_email_uq" in msg -> emailConflict = true
+                        else -> throw e
                     }
-                    throw e
                 }
+            }
+            if (emailConflict) {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
             }
             if (!inserted) {
                 call.respond(HttpStatusCode.InternalServerError)
                 return@post
-            }
-
-            val expiresAt = jwtConfig.expiresAt(now)
-            val sessionUuid = UUID.randomUUID()
-
-            transaction {
-                AuthSessions.insert { row ->
-                    row[id] = sessionUuid
-                    row[AuthSessions.userId] = userId
-                    row[AuthSessions.createdAt] = createdAt
-                    row[AuthSessions.expiresAt] = LocalDateTime.ofInstant(expiresAt, ZoneOffset.UTC)
-                }
             }
 
             val token = jwtConfig.createToken(sessionUuid.toString(), now)
